@@ -110,28 +110,31 @@ function startGame()
 	p2YPos = HEIGHT/2;
 	ballX = 300;
 	ballY = 200;
-	//generating and setting a random value between 0 and 2 for the Y-Axis movement to the left
-	var randomCalc = Math.random();
+	var randomCalc = Math.random();//generating and setting a random value between 0 and 2 for the Y-Axis movement to the left
 	var randomMove = randomCalc * (-2);
-	//mainLoop(); start interval for main loop
+	p1Up = false;
+	p1Down = false;
+	p2Up = false;
+	p2Down = false;
+	//mainLoop(randomMove); start interval for main loop
 }
 
-function mainLoop()
+function mainLoop(randomMove)
 {
-	moveBall();
+	moveBall(randomMove);
 	movePaddles();
 	checkBallCollision();
 }
 
 
-function moveBall()
+function moveBall(randomMove)
 {
 	console.log(randomMove);
 	ballXM = 4;
 	ballYM = randomMove;
 }
 
-function movePaddles()
+function movePaddles()//keep track of up and down arrow key presses
 {
 	
 }
