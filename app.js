@@ -136,7 +136,22 @@ function moveBall(randomMove)
 
 function movePaddles()//keep track of up and down arrow key presses
 {
-	
+	if (p1Up == true)
+	{
+		p1YPos -= 5;
+	}
+	if (p1Down == true)
+	{
+		p1YPos += 5;
+	}
+	if (p2Up == true)
+	{
+		p2YPos -= 5;
+	}
+	if (p2Down == true)
+	{
+		p2YPos += 5;
+	}
 }
 
 function checkBallCollision()
