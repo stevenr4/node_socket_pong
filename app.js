@@ -18,6 +18,9 @@ var WIDTH = 600;
 var HEIGHT = 400;
 var P_WIDTH = 20;
 var P_HEIGHT = 80;
+var FACE_GAP = 40; //the gap between the front face of the paddle and the side of the canvas
+var B_WIDTH = 10;
+var B_HEIGHT = 10;
 var players = [];
 /*
  * Each player will have a number associated with who they are.
@@ -32,6 +35,10 @@ var ballX = 0;
 var ballY = 0;
 var ballXM = 0;
 var ballYM = 0;
+var p1Up = false; //these 4 set to true if the player is holding the appropriate directional button
+var p1Down = false;
+var p2Up = false;
+var p2Down = false;
 
 
 // This is where the data is sent back and forth.
@@ -94,13 +101,37 @@ io.sockets.on('connection', function(socket){
 	});
 });
 
+//ALWAYS PULL BEFORE YOU ADD ANYTHING
+function startGame()
+{
+	//when scores are implemented, need to be reset to 0 here
+	p1YPos = HEIGHT/2;
+	p2YPos = HEIGHT/2;
+	ballX = 300;
+	ballY = 200;
+	mainLoop();
+}
+
+function mainLoop()
+{
+	
+}
 
 
+function moveBall()
+{
+	
+}
 
+function movePaddles()
+{
+	
+}
 
-
-
-
+function checkBallCollision()
+{
+	
+}
 
 
 
