@@ -7,27 +7,38 @@
   	<script src="/socket.io/socket.io.js"></script>
   	<script>
 
+  	  // When the document is loaded and ready, run this function
   	  $(document).ready(function(){
 
-		var WIDTH = 600;
-		var HEIGHT = 400;
-		var P_WIDTH = 20;
-		var P_HEIGHT = 80;
+  	  	// This is the static WIDTH and HEIGHT variables (Overwritten when connection is declared)
+		var WIDTH = 0;
+		var HEIGHT = 0;
 
+		// These are the static player width/height variables (Again, Overwritten when connection is declared)
+		var P_WIDTH = 00;
+		var P_HEIGHT = 00;
+
+		// These are the static variables for the ball
+		var B_WIDTH = 0;
+		var B_HEIGHT = 0;
+
+		// These are the Y positions of the players
 		var p1YPos = 0;
 		var p2YPos = 0;
 
+		// The ID of a player
 		var player_id = null;
 
 		// 38 = UP
 		// 40 = DOWN
+		// If a key is hit, that element of the array is set to TRUE, and False when let go
 		var keysDown = [];
 
 		var c = document.getElementById("my_canvas");
 		console.log(c);
 		var ctx = c.getContext("2d");
 
-		var socket = io.connect('127.0.0.1:3000');
+		var socket = io.connect('127.0.0.1:3000'); //////////////////////////////////////////////////////////////////////
 
 		socket.on('initial_connection', function(data){
 			console.log("Initially connected...");
@@ -77,11 +88,14 @@
 			printPlayer(
 				20,
 				p1YPos);
+
 			printPlayer(
 				WIDTH - 20 - P_WIDTH,
 				p2YPos);
 
 		}
+
+
 		refreshScreen();
 
 		socket.on('positions', function(data){
