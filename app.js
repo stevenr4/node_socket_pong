@@ -39,8 +39,7 @@ var p1Up = false; //these 4 set to true if the player is holding the appropriate
 var p1Down = false;
 var p2Up = false;
 var p2Down = false;
-var randomCalc = Math.random();
-var randomMove = randomCalc * (-2);//generating a random value between 0 and 2 for the Y-Axis movement to the left
+
 
 
 // This is where the data is sent back and forth.
@@ -111,6 +110,9 @@ function startGame()
 	p2YPos = HEIGHT/2;
 	ballX = 300;
 	ballY = 200;
+	//generating and setting a random value between 0 and 2 for the Y-Axis movement to the left
+	var randomCalc = Math.random();
+	var randomMove = randomCalc * (-2);
 	//mainLoop(); start interval for main loop
 }
 
