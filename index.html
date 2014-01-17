@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  	<meta charset="utf-8" />
+  	<title>Pong</title>
+  	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  	<script src="/socket.io/socket.io.js"></script>
+  	<script>
+
+  	  $(document).ready(function(){
+
+		var WIDTH = 600;
+		var HEIGHT = 400;
+		var P_WIDTH = 20;
+		var P_HEIGHT = 80;
+
+		var p1YPos = 0;
+		var p2YPos = 0;
+
+		var player_id = null;
+
+		// 38 = UP
+		// 40 = DOWN
+		var keysDown = [];
+
+		var c = document.getElementById("my_canvas");
+		console.log(c);
+		var ctx = c.getContext("2d");
+
+		var socket = io.connect('127.0.0.1:3000');
+
+		socket.on('initial_connection', function(data){
+			console.log("Initially connected...");
+			console.log(data);
+			p1YPos = data.p1YPos;
+			p2YPos = data.p2YPos;
+			player_id = data.player_id;
+			refreshScreen();
+		});
+
+		window.addEventListener('keydown', changeKeyDown, true);
+		window.addEventListener('keyup', changeKeyUp, true);
+
+		function changeKeyDown(evt){
+			var keyNum = evt.keyCode;
+			console.log("Key hit: " + keyNum);
+			keysDown[keyNum] = true;
+			
+		}
+		function changeKeyUp(evt){
+			var keyNum = evt.keyCode;
+			console.log("Key let go: " + keyNum);
+			keysDown[keyNum] = false;
+		}
+
+		function moveDown(){
+			if(player_id != null){
+				socket.emit('request_move_down',{
+					player_id:player_id
+				});
+			}else{
+				alert("Didn't connect to server!");
+			}
+		}
+
+
+		function cls(){
+			ctx.fillStyle = "#000000";
+			ctx.fillRect(0,0,WIDTH,HEIGHT);
+		}
+		function printPlayer(x,y){
+			ctx.fillStyle = "#FFFFFF";
+			ctx.fillRect(x,y,P_WIDTH,P_HEIGHT);
+		}
+		function refreshScreen(){
+			cls();
+			printPlayer(
+				20,
+				p1YPos);
+			printPlayer(
+				WIDTH - 20 - P_WIDTH,
+				p2YPos);
+
+		}
+		refreshScreen();
+
+		socket.on('positions', function(data){
+			console.log("Got positions data: " + data);
+			p1YPos = data.p1YPos;
+			p2YPos = data.p2YPos;
+			refreshScreen();
+		});
+
+
+  	  });
+
+  	</script>
+  </head>
+  <body>
+  	<h1>Socket.IO Pong</h1>
+  	<canvas id="my_canvas" width="600" height="400">
+  		Your web browser does not support the 'Canvas' tag.
+  	</canvas>
+  </body>
+</html>
