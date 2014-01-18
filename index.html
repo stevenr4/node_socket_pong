@@ -29,10 +29,6 @@
 		// The ID of a player
 		var player_id = null;
 
-		// 38 = UP
-		// 40 = DOWN
-		// If a key is hit, that element of the array is set to TRUE, and False when let go
-		var keysDown = [];
 
 		var c = document.getElementById("my_canvas");
 		console.log(c);
@@ -49,13 +45,16 @@
 			refreshScreen();
 		});
 
+
+
+
+		/// THIS SECTION MANAGES THE KEY PRESSES AND UPDATES THE SERVER
 		window.addEventListener('keydown', changeKeyDown, true);
 		window.addEventListener('keyup', changeKeyUp, true);
+		// 38 = UP
+		// 40 = DOWN
 
 		function changeKeyDown(evt){
-			var keyNum = evt.keyCode;
-			console.log("Key hit: " + keyNum);
-			keysDown[keyNum] = true;
 			
 		}
 		function changeKeyUp(evt){
