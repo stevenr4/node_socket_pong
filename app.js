@@ -64,6 +64,7 @@ io.sockets.on('connection', function(socket){
 
 	if(player_count == 1){
 		p1_id = player_id_count;
+		startGame();
 	}else if(player_count == 2){
 		p2_id = player_id_count;
 	}
@@ -92,6 +93,7 @@ io.sockets.on('connection', function(socket){
 		player_count--;
 		console.log('User disconnected. ' + player_count + ' user(s) present.');
 		socket.broadcast.emit('users',{number:player_count});
+		endGame();
 	});
 
 
@@ -170,6 +172,11 @@ function updatePlayers(){
 	io.sockets.emit('positions',{p1YPos:p1YPos,p2YPos:p2YPos,ballX:ballX,ballY:ballY});
 }
 
+function endGame(){
+	if(mainLoopInterval != null){
+		clearInterval(mainLoopInterval);
+	}
+}
 
 // This function starts up the game.
 function startGame()
@@ -181,11 +188,18 @@ function startGame()
 	ballY = 200;
 	var randomCalc = Math.random();//generating and setting a random value between 0 and 2 for the Y-Axis movement to the left
 	var randomMove = randomCalc * (-2);
+
+	// Moved this here vecause it should only initialize once.
+	console.log(randomMove);
+	ballXM = 4;
+	ballYM = randomMove;
+
 	p1Up = false;
 	p1Down = false;
 	p2Up = false;
 	p2Down = false;
 	//mainLoop(randomMove); start interval for main loop
+	mainLoopInterval = setInterval(mainLoop, 16);
 }
 
 function mainLoop(randomMove)
@@ -199,9 +213,10 @@ function mainLoop(randomMove)
 
 function moveBall(randomMove)
 {
-	console.log(randomMove);
-	ballXM = 4;
-	ballYM = randomMove;
+	// This moves the ball in the right direction
+
+	ballX += ballXM;
+	ballY += ballYM;
 }
 
 function movePaddles()//keep track of up and down arrow key presses

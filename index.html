@@ -26,6 +26,10 @@
 		var p1YPos = 0;
 		var p2YPos = 0;
 
+		// This is the X and Y coords of the ball
+		var ballX = 0;
+		var ballY = 0;
+
 		// The ID of a player
 		var player_id = null;
 
@@ -42,13 +46,14 @@
 			p1YPos = data.p1YPos;
 			p2YPos = data.p2YPos;
 			player_id = data.player_id;
-			refreshScreen();
 			WIDTH = data.WIDTH;
 			HEIGHT = data.HEIGHT;
 			P_WIDTH = data.P_WIDTH;
 			P_HEIGHT = data.P_HEIGHT;
 			B_WIDTH = data.B_WIDTH;
 			B_HEIGHT = data.B_HEIGHT;
+
+			refreshScreen();
 		});
 
 
@@ -101,9 +106,14 @@
 			ctx.fillStyle = "#FFFFFF";
 			ctx.fillRect(x,y,P_WIDTH,P_HEIGHT);
 		}
+		function printBall(x,y){
+			ctx.beginPath();
+			ctx.arc(x + B_WIDTH/2, y + B_HEIGHT/2, B_HEIGHT/2, 0, 2 * Math.PI, false);
+			ctx.fillStyle = '#FFFFFF';
+			ctx.fill();
+			ctx.closePath();
+		}
 		function refreshScreen(){
-			console.log("Refreshing the screen.");
-			console.log(WIDTH + ' ' + HEIGHT);
 			cls();
 			printPlayer(
 				20,
@@ -112,16 +122,14 @@
 			printPlayer(
 				WIDTH - 20 - P_WIDTH,
 				p2YPos);
+			printBall(ballX,ballY);
 
 		}
-
-
-		refreshScreen();
-
 		socket.on('positions', function(data){
-			console.log("Got positions data: " + data);
 			p1YPos = data.p1YPos;
 			p2YPos = data.p2YPos;
+			ballX = data.ballX;
+			ballY = data.ballY;
 			refreshScreen();
 		});
 
