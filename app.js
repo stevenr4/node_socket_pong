@@ -52,6 +52,7 @@ var p1Down = false;
 var p2Up = false;
 var p2Down = false;
 
+var mainLoopInterval = null;
 
 
 // When a player connects, It will run this function..
@@ -61,11 +62,24 @@ io.sockets.on('connection', function(socket){
 	player_count++;
 	player_id_count++;
 
+	if(player_count == 1){
+		p1_id = player_id_count;
+	}else if(player_count == 2){
+		p2_id = player_id_count;
+	}
+
 	// Log to the console what's going on..
 	console.log('User connected. ' + player_count + ' user(s) present.');
 
 	// Emit to the player 
 	socket.emit('initial_connection', { 
+		WIDTH:WIDTH,
+		HEIGHT:HEIGHT,
+		P_WIDTH:P_WIDTH,
+		P_HEIGHT:P_HEIGHT,
+		FACE_GAP:FACE_GAP,
+		B_WIDTH:B_WIDTH,
+		B_HEIGHT:B_HEIGHT,
 		player_count:player_count,
 		player_id:player_id_count,
 		p1YPos:p1YPos,
@@ -109,10 +123,15 @@ io.sockets.on('connection', function(socket){
 
 	// This function is for the client to update the UP ARROW key
 	socket.on('up_key', function(data){
+		console.log("up_key data received..");
+
 		if(data.player_id == p1_id){
+			console.log("player1 send the data...");
 			if(data.keyPressed){
+				console.log("p1Up = true;");
 				p1Up = true;
 			}else{
+				console.log("p1Up = false;");
 				p1Up = false;
 			}
 		}else if(data.player_id == p2_id){
@@ -146,17 +165,13 @@ io.sockets.on('connection', function(socket){
 
 });
 
-
-
-
+// This function updates the players
 function updatePlayers(){
-	socket.broadcast.emit('positions',{p1YPos:p1YPos,p2YPos:p2YPos});
+	io.sockets.emit('positions',{p1YPos:p1YPos,p2YPos:p2YPos,ballX:ballX,ballY:ballY});
 }
 
 
-
-
-//ALWAYS PULL BEFORE YOU ADD ANYTHING
+// This function starts up the game.
 function startGame()
 {
 	//when scores are implemented, need to be reset to 0 here

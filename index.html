@@ -43,6 +43,12 @@
 			p2YPos = data.p2YPos;
 			player_id = data.player_id;
 			refreshScreen();
+			WIDTH = data.WIDTH;
+			HEIGHT = data.HEIGHT;
+			P_WIDTH = data.P_WIDTH;
+			P_HEIGHT = data.P_HEIGHT;
+			B_WIDTH = data.B_WIDTH;
+			B_HEIGHT = data.B_HEIGHT;
 		});
 
 
@@ -55,12 +61,25 @@
 		// 40 = DOWN
 
 		function changeKeyDown(evt){
-			
+			if(player_id){
+				var key = evt.keyCode;
+				if(key==38){       // UP
+					socket.emit('up_key',{player_id:player_id,keyPressed:true});
+				}else if(key==40){ // DOWN
+					socket.emit('down_key',{player_id:player_id,keyPressed:true});
+				}
+			}
 		}
 		function changeKeyUp(evt){
-			var keyNum = evt.keyCode;
-			console.log("Key let go: " + keyNum);
-			keysDown[keyNum] = false;
+			if(player_id){
+				var key = evt.keyCode;
+				if(key==38){       // UP
+					console.log("Sending up-key was released!");
+					socket.emit('up_key',{player_id:player_id,keyPressed:false});
+				}else if(key==40){ // DOWN
+					socket.emit('down_key',{player_id:player_id,keyPressed:false});
+				}
+			}
 		}
 
 		function moveDown(){
@@ -83,6 +102,8 @@
 			ctx.fillRect(x,y,P_WIDTH,P_HEIGHT);
 		}
 		function refreshScreen(){
+			console.log("Refreshing the screen.");
+			console.log(WIDTH + ' ' + HEIGHT);
 			cls();
 			printPlayer(
 				20,
