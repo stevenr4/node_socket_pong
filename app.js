@@ -239,11 +239,57 @@ function movePaddles()//keep track of up and down arrow key presses
 	}
 }
 
+// This function calls all the functions related to checking the ball's collision with objects.
 function checkBallCollision()
 {
-	
+	// First, we check if it hit the top or the bottom of the play area
+	bounceBallOffTopOrBottom();
+
+	// This function should only be used for test puporses
+	checkHorizontalBallCollisionTEST();
+
 }
 
+
+// This function checks if the ball hit the 'ceiling' or the 'floor' of the 'play area'
+function bounceBallOffTopOrBottom(){
+	// If the ball hits the top of the 'play area' AND if the ball is moving UP
+	if((ballY < 0) && (ballYM < 0)){
+		// Turn around the momentum
+		ballYM = -ballYM;
+	}
+
+	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
+	if((ballY > HEIGHT) && (ballYM > 0)){
+		// Turn around the momentum
+		ballYM = -ballYM;
+	}
+}
+
+// This function checks if the ball bounced off of a paddle
+function bounceBallOffPaddle(){
+	// DO STUFF
+}
+
+// This function checks if the ball hit the side (resulting in a win/loss)
+function checkHorizontalBallCollision(){
+	// DO STUFF
+}
+
+// This function should be only used for testing puporses
+function checkHorizontalBallCollisionTEST(){
+	// If the ball hits the top of the 'play area' AND if the ball is moving UP
+	if((ballX < 0) && (ballXM < 0)){
+		// Turn around the momentum
+		ballXM = -ballXM;
+	}
+
+	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
+	if((ballX > WIDTH) && (ballXM > 0)){
+		// Turn around the momentum
+		ballXM = -ballXM;
+	}
+}
 
 
 
