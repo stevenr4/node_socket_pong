@@ -62,10 +62,12 @@ io.sockets.on('connection', function(socket){
 	player_count++;
 	player_id_count++;
 
+	// THIS WILL NEED TO BE CHANGED,
+	// The first player to connect is obviously player 1
 	if(player_count == 1){
 		p1_id = player_id_count;
-		startGame();
-	}else if(player_count == 2){
+		startGame();///////////////////////////////////////////THIS IS HERE FOR TESTING PUPORSES
+	}else if(player_count == 2){// The second player to connect is player 2
 		p2_id = player_id_count;
 	}
 
@@ -73,7 +75,7 @@ io.sockets.on('connection', function(socket){
 	console.log('User connected. ' + player_count + ' user(s) present.');
 
 	// Emit to the player 
-	socket.emit('initial_connection', { 
+	socket.emit('initial_connection', { // On the initial connection, we send all of the data for the game. INCLUDING STATICS!!
 		WIDTH:WIDTH,
 		HEIGHT:HEIGHT,
 		P_WIDTH:P_WIDTH,
@@ -88,40 +90,24 @@ io.sockets.on('connection', function(socket){
 		players:players
 	});
 
+	// Plan to do more information with this later, like updating the player list for the users.
 	socket.broadcast.emit('player_connected',{number:player_count});
+
+	// When a user disconnects, I would like to see it in the console, we also need to update the total players
 	socket.on('disconnect', function(){
+		// Update the total player count
 		player_count--;
+
+		// Log that the user disconnected
 		console.log('User disconnected. ' + player_count + ' user(s) present.');
+
+		// Update ALL OTHER USERS with the new information
 		socket.broadcast.emit('users',{number:player_count});
+
+		// //////////////////////////////////////////////////////////// USE SOME MORE LOGIC HERE, DON"T JUST END IT!!!
 		endGame();
 	});
 
-
-	// socket.on('key_update', function(data){
-	// 	if(data.player_id == p1_id){
-	// 		if(data.key_up){
-	// 			p1Up = true;
-	// 		}else{
-	// 			p1Up = false;
-	// 		}
-	// 		if(data.key_down){
-	// 			p1Down = true;
-	// 		}else{
-	// 			p1Down = false;
-	// 		}
-	// 	}else if(data.player_id == p2_id){
-	// 		if(data.key_up){
-	// 			p1Up = true;
-	// 		}else{
-	// 			p1Up = false;
-	// 		}
-	// 		if(data.key_down){
-	// 			p1Down = true;
-	// 		}else{
-	// 			p1Down = false;
-	// 		}
-	// 	}
-	// });
 
 	// This function is for the client to update the UP ARROW key
 	socket.on('up_key', function(data){
@@ -169,7 +155,13 @@ io.sockets.on('connection', function(socket){
 
 // This function updates the players
 function updatePlayers(){
-	io.sockets.emit('positions',{p1YPos:p1YPos,p2YPos:p2YPos,ballX:ballX,ballY:ballY});
+	io.sockets.emit('positions',{
+		p1YPos:p1YPos,
+		p2YPos:p2YPos,
+		ballX:ballX,
+		ballY:ballY,
+		ballXM:ballXM,
+		ballYM:ballYM});
 }
 
 function endGame(){
@@ -248,6 +240,8 @@ function checkBallCollision()
 	// This function should only be used for test puporses
 	checkHorizontalBallCollisionTEST();
 
+	// Now we bounce the ball off of the paddle
+	bounceBallOffPaddle();
 }
 
 
@@ -268,7 +262,32 @@ function bounceBallOffTopOrBottom(){
 
 // This function checks if the ball bounced off of a paddle
 function bounceBallOffPaddle(){
-	// DO STUFF
+
+	// We check if the ball is within collision on the x-axis
+
+	// For the LEFT player (Player 1)
+	if((ballX < FACE_GAP) &&                       // It's within reach
+		(ballX + B_HEIGHT > FACE_GAP - P_WIDTH) && // It's NOT BEHIND the paddle
+		(ballXM < 0)){                             // AND the ball is GOING left
+		// Now we check if it's within he paddle's height
+		if((ballY + B_HEIGHT > p1YPos) && // The ball is below the top of the paddle
+			(ballY < p1YPos + P_HEIGHT)){ // The ball is above the bottom of the paddle
+			// We know the ball is inside the paddle, we can now reverse the direction
+			ballXM = -ballXM;
+		}
+	}
+
+	// For the Right player (Player 2)
+	if((ballX + B_HEIGHT > WIDTH - FACE_GAP) &&   // It's within reach
+		(ballX < WIDTH - FACE_GAP + P_WIDTH) &&    // It's NOT BEHIND the paddle
+		(ballXM > 0)){                             // AND the ball is GOING left
+		// Now we check if it's within he paddle's height
+		if((ballY + B_HEIGHT > p2YPos) && // The ball is below the top of the paddle
+			(ballY < p2YPos + P_HEIGHT)){ // The ball is above the bottom of the paddle
+			// We know the ball is inside the paddle, we can now reverse the direction
+			ballXM = -ballXM;
+		}
+	}
 }
 
 // This function checks if the ball hit the side (resulting in a win/loss)
