@@ -6,13 +6,25 @@ var fs = require("fs");
 
 // Create a new server
 var server = http.createServer(function(req,res){
-	fs.readFile('./index.html', function(error, data){
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.end(data, 'utf-8');
-	});
-}).listen(3000, "127.0.0.1"); ///////////////////////////////////////////////        <<<<<<<<<<< CHANGE THIS DURING PRODUCTION
+	console.log(req.url);
+	var path = req.url;
 
-console.log("Server started at 127.0.0.1:3000"); ////////////////////////////        <<<<<<<<<<< CHANGE THIS DURING PRODUCTION
+	if(path === '/'){
+		fs.readFile('./index.html', function(error, data){
+			res.writeHead(200, {'Content-Type': 'text/html'});
+			res.end(data, 'utf-8');
+		});
+	}else if(path === '/static/pong.js'){
+		fs.readFile('./static/pong.js', function(error, data){
+			res.writeHead(200, {'Content-Type': 'text/javascript'});
+			res.end(data, 'utf-8');
+		});
+	}
+
+
+}).listen(3000, "0.0.0.0"); ///////////////////////////////////////////////        <<<<<<<<<<< CHANGE THIS DURING PRODUCTION
+
+console.log("Server started at 0.0.0.0:3000"); ////////////////////////////        <<<<<<<<<<< CHANGE THIS DURING PRODUCTION
 
 // Import the socket.io module
 var io = require('socket.io').listen(server);
@@ -27,7 +39,6 @@ var P_HEIGHT = 80;
 var FACE_GAP = 40; //the gap between the front face of the paddle and the side of the canvas
 
 var B_WIDTH = 10; // The width and height of the BALL
-var B_HEIGHT = 10;
 
 var players = []; // This will hold an array of objects for each player. Plan to store the score and data here. the index is the ID
 
@@ -47,12 +58,19 @@ var ballYM = 0; //  This is the Y momentum of the ball
 var p1_id = 0; // This is to keep track of what player is currently player1
 var p2_id = 0; // This is to keep track of what player is currently player2
 
+var MAX_LIFE = 2;
+var p1Life = 2;
+var p2Life = 2;
+
 var p1Up = false; //these 4 set to true if the player is holding the appropriate directional button
 var p1Down = false;
 var p2Up = false;
 var p2Down = false;
 
+// The variable that accepts the main loop
 var mainLoopInterval = null;
+var FRAME_RATE = 16;
+var PLAYER_SPEED = 5;
 
 
 // When a player connects, It will run this function..
@@ -66,7 +84,6 @@ io.sockets.on('connection', function(socket){
 	// The first player to connect is obviously player 1
 	if(player_count == 1){
 		p1_id = player_id_count;
-		startGame();///////////////////////////////////////////THIS IS HERE FOR TESTING PUPORSES
 	}else if(player_count == 2){// The second player to connect is player 2
 		p2_id = player_id_count;
 	}
@@ -82,16 +99,28 @@ io.sockets.on('connection', function(socket){
 		P_HEIGHT:P_HEIGHT,
 		FACE_GAP:FACE_GAP,
 		B_WIDTH:B_WIDTH,
-		B_HEIGHT:B_HEIGHT,
 		player_count:player_count,
 		player_id:player_id_count,
 		p1YPos:p1YPos,
 		p2YPos:p2YPos,
-		players:players
+		players:players,
+		FRAME_RATE:FRAME_RATE,
+		PLAYER_SPEED:PLAYER_SPEED,
+		you_are_p1:(player_count == 1),
+		you_are_p2:(player_count == 2),
+		MAX_LIFE:MAX_LIFE
 	});
 
 	// Plan to do more information with this later, like updating the player list for the users.
 	socket.broadcast.emit('player_connected',{number:player_count});
+
+	socket.on('request_start', function(data){
+		if(player_count >= 2){
+
+			endGame();
+			startGame();
+		}
+	});
 
 	// When a user disconnects, I would like to see it in the console, we also need to update the total players
 	socket.on('disconnect', function(){
@@ -129,6 +158,7 @@ io.sockets.on('connection', function(socket){
 				p2Up = false;
 			}
 		}
+		updatePlayers();
 	});
 
 	socket.on('down_key',function(data){
@@ -145,6 +175,7 @@ io.sockets.on('connection', function(socket){
 				p2Down = false;
 			}
 		}
+		updatePlayers();
 	});
 
 
@@ -161,10 +192,20 @@ function updatePlayers(){
 		ballX:ballX,
 		ballY:ballY,
 		ballXM:ballXM,
-		ballYM:ballYM});
+		ballYM:ballYM,
+		p1Up:p1Up,
+		p1Down:p1Down,
+		p2Up:p2Up,
+		p2Down:p2Down,
+		p1Life:p1Life,
+		p2Life:p2Life
+	});
 }
 
 function endGame(){
+	io.sockets.emit('end_game',{
+		////
+	});
 	if(mainLoopInterval != null){
 		clearInterval(mainLoopInterval);
 	}
@@ -173,6 +214,9 @@ function endGame(){
 // This function starts up the game.
 function startGame()
 {
+	io.sockets.emit('start_game',{
+		////
+	});
 	//when scores are implemented, need to be reset to 0 here
 	p1YPos = HEIGHT/2;
 	p2YPos = HEIGHT/2;
@@ -183,7 +227,7 @@ function startGame()
 
 	// Moved this here vecause it should only initialize once.
 	console.log(randomMove);
-	ballXM = 4;
+	ballXM = -4.0;
 	ballYM = randomMove;
 
 	p1Up = false;
@@ -191,43 +235,44 @@ function startGame()
 	p2Up = false;
 	p2Down = false;
 	//mainLoop(randomMove); start interval for main loop
-	mainLoopInterval = setInterval(mainLoop, 16);
+	mainLoopInterval = setInterval(mainLoop, FRAME_RATE);
 }
 
+
+// This is the main loop
 function mainLoop(randomMove)
 {
 	moveBall(randomMove);
 	movePaddles();
 	checkBallCollision();
-	updatePlayers();
 }
 
 
 function moveBall(randomMove)
 {
 	// This moves the ball in the right direction
-
 	ballX += ballXM;
 	ballY += ballYM;
 }
 
+// This moves the paddles
 function movePaddles()//keep track of up and down arrow key presses
 {
-	if (p1Up == true)
+	if (p1Up && (p1YPos > 0))
 	{
-		p1YPos -= 5;
+		p1YPos -= PLAYER_SPEED;
 	}
-	if (p1Down == true)
+	if (p1Down && (p1YPos + P_HEIGHT < HEIGHT))
 	{
-		p1YPos += 5;
+		p1YPos += PLAYER_SPEED;
 	}
-	if (p2Up == true)
+	if (p2Up && (p2YPos > 0))
 	{
-		p2YPos -= 5;
+		p2YPos -= PLAYER_SPEED;
 	}
-	if (p2Down == true)
+	if (p2Down && (p2YPos + P_HEIGHT < HEIGHT))
 	{
-		p2YPos += 5;
+		p2YPos += PLAYER_SPEED;
 	}
 }
 
@@ -251,12 +296,14 @@ function bounceBallOffTopOrBottom(){
 	if((ballY < 0) && (ballYM < 0)){
 		// Turn around the momentum
 		ballYM = -ballYM;
+		updatePlayers();
 	}
 
 	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
-	if((ballY > HEIGHT) && (ballYM > 0)){
+	if((ballY + B_WIDTH > HEIGHT) && (ballYM > 0)){
 		// Turn around the momentum
 		ballYM = -ballYM;
+		updatePlayers();
 	}
 }
 
@@ -267,25 +314,27 @@ function bounceBallOffPaddle(){
 
 	// For the LEFT player (Player 1)
 	if((ballX < FACE_GAP) &&                       // It's within reach
-		(ballX + B_HEIGHT > FACE_GAP - P_WIDTH) && // It's NOT BEHIND the paddle
+		(ballX + B_WIDTH > FACE_GAP - P_WIDTH) && // It's NOT BEHIND the paddle
 		(ballXM < 0)){                             // AND the ball is GOING left
 		// Now we check if it's within he paddle's height
-		if((ballY + B_HEIGHT > p1YPos) && // The ball is below the top of the paddle
+		if((ballY + B_WIDTH > p1YPos) && // The ball is below the top of the paddle
 			(ballY < p1YPos + P_HEIGHT)){ // The ball is above the bottom of the paddle
 			// We know the ball is inside the paddle, we can now reverse the direction
 			ballXM = -ballXM;
+			updatePlayers();
 		}
 	}
 
 	// For the Right player (Player 2)
-	if((ballX + B_HEIGHT > WIDTH - FACE_GAP) &&   // It's within reach
+	if((ballX + B_WIDTH > WIDTH - FACE_GAP) &&   // It's within reach
 		(ballX < WIDTH - FACE_GAP + P_WIDTH) &&    // It's NOT BEHIND the paddle
 		(ballXM > 0)){                             // AND the ball is GOING left
 		// Now we check if it's within he paddle's height
-		if((ballY + B_HEIGHT > p2YPos) && // The ball is below the top of the paddle
+		if((ballY + B_WIDTH > p2YPos) && // The ball is below the top of the paddle
 			(ballY < p2YPos + P_HEIGHT)){ // The ball is above the bottom of the paddle
 			// We know the ball is inside the paddle, we can now reverse the direction
 			ballXM = -ballXM;
+			updatePlayers();
 		}
 	}
 }
@@ -301,12 +350,14 @@ function checkHorizontalBallCollisionTEST(){
 	if((ballX < 0) && (ballXM < 0)){
 		// Turn around the momentum
 		ballXM = -ballXM;
+		updatePlayers();
 	}
 
 	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
 	if((ballX > WIDTH) && (ballXM > 0)){
 		// Turn around the momentum
 		ballXM = -ballXM;
+		updatePlayers();
 	}
 }
 
