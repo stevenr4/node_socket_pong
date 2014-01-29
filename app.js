@@ -63,6 +63,9 @@ var ballX = 0; // This is the X location of the ball
 var ballY = 0; // This is the Y location of the ball
 var ballXM = 0; // This is the X momentum of the ball
 var ballYM = 0; //  This is the Y momentum of the ball
+var BALL_START_SPEED = 2;
+var ballXMIncrease = .2;
+var paddleBounceWeight = 1.5;
 var p1_id = 0; // This is to keep track of what player is currently player1
 var p2_id = 0; // This is to keep track of what player is currently player2
 
@@ -226,22 +229,27 @@ function startGame()
 		////
 	});
 
+
+	//Set the life
+	p1Life = MAX_LIFE;
+	p2Life = MAX_LIFE;
+
 	resetBall();
 	resetPlayers();
 	mainLoopInterval = setInterval(mainLoop, FRAME_RATE);
 }
 
 function resetBall(){
-	ballX = 300;
-	ballY = 200;
-	var randomCalc = Math.random();//generating and setting a random value between 0 and 2 for the Y-Axis movement to the left
-	var randomMove = randomCalc * (-2);
+	ballX = WIDTH/2;
+	ballY = HEIGHT/2;
+	var randomMove = (Math.random() * 4) - 2;
 
-	ballXM = -4.0;
+	ballXM = -BALL_START_SPEED;
 	ballYM = randomMove;
 }
 
 function resetPlayers(){
+
 
 	//when scores are implemented, need to be reset to 0 here
 	p1YPos = HEIGHT/2;
@@ -251,6 +259,31 @@ function resetPlayers(){
 	p2Up = false;
 	p2Down = false;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -298,7 +331,8 @@ function checkBallCollision()
 	bounceBallOffTopOrBottom();
 
 	// This function should only be used for test puporses
-	checkHorizontalBallCollisionTEST();
+	// checkHorizontalBallCollisionTEST();
+	checkHorizontalBallCollision();
 
 	// Now we bounce the ball off of the paddle
 	bounceBallOffPaddle();
@@ -336,6 +370,14 @@ function bounceBallOffPaddle(){
 			(ballY < p1YPos + P_HEIGHT)){ // The ball is above the bottom of the paddle
 			// We know the ball is inside the paddle, we can now reverse the direction
 			ballXM = -ballXM;
+			ballXM += ballXMIncrease;
+
+			//Get the relative position of the center of the ball to the center of the paddle -1 -> 1
+			relativePosition = ((ballY + (B_WIDTH)/2.0) - (p1YPos + (P_HEIGHT/2.0))) / (P_HEIGHT/2.0);
+
+			// Change the ball's vertical velocity by the relative bounce position
+			ballYM += relativePosition * paddleBounceWeight;
+
 			updatePlayers();
 		}
 	}
@@ -349,6 +391,14 @@ function bounceBallOffPaddle(){
 			(ballY < p2YPos + P_HEIGHT)){ // The ball is above the bottom of the paddle
 			// We know the ball is inside the paddle, we can now reverse the direction
 			ballXM = -ballXM;
+			ballXM -= ballXMIncrease;
+
+			//Get the relative position of the center of the ball to the center of the paddle -1 -> 1
+			relativePosition = ((ballY + (B_WIDTH)/2.0) - (p2YPos + (P_HEIGHT/2.0))) / (P_HEIGHT/2.0);
+
+			// Change the ball's vertical velocity by the relative bounce position
+			ballYM += relativePosition * paddleBounceWeight;
+
 			updatePlayers();
 		}
 	}
@@ -356,31 +406,41 @@ function bounceBallOffPaddle(){
 
 // This function checks if the ball hit the side (resulting in a win/loss)
 function checkHorizontalBallCollision(){
-	// If the ball hits the top of the 'play area' AND if the ball is moving UP
+	// If the ball is moving left and hits the left...
 	if((ballX < 0) && (ballXM < 0)){
 		// Turn around the momentum
-		ballXM = -ballXM;
+		resetPlayers();
+		resetBall();
+		p1Life--;
+		if(p1Life <= 0){
+			endGame();
+		}
 		updatePlayers();
 	}
 
-	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
+	// If the ball is moving right and hits the right
 	if((ballX + B_WIDTH > WIDTH) && (ballXM > 0)){
 		// Turn around the momentum
-		ballXM = -ballXM;
+		resetPlayers();
+		resetBall();
+		p2Life--;
+		if(p2Life <= 0){
+			endGame();
+		}
 		updatePlayers();
 	}
 }
 
 // This function should be only used for testing puporses
 function checkHorizontalBallCollisionTEST(){
-	// If the ball hits the top of the 'play area' AND if the ball is moving UP
+	// MOVING LEFT
 	if((ballX < 0) && (ballXM < 0)){
 		// Turn around the momentum
 		ballXM = -ballXM;
 		updatePlayers();
 	}
 
-	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
+	// IMOVING RIGHT
 	if((ballX + B_WIDTH > WIDTH) && (ballXM > 0)){
 		// Turn around the momentum
 		ballXM = -ballXM;

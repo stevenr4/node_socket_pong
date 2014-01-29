@@ -110,9 +110,9 @@ $(document).ready(function(){
 		p1Down = data.p1Down;
 		p2Up = data.p2Up;
 		p2Down = data.p2Down;
-		refreshScreen();
 		p1Life = data.p1Life;
 		p2Life = data.p2Life;
+		refreshScreen();
 	});
 
 	// When the server tells us that we are starting the game...
