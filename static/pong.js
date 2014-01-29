@@ -3,7 +3,7 @@
 // When the document is loaded and ready, run this function
 $(document).ready(function(){
 
-	  	// This is the static WIDTH and HEIGHT variables (Overwritten when connection is declared)
+	// This is the static WIDTH and HEIGHT variables (Overwritten when connection is declared)
 	var WIDTH = 0;
 	var HEIGHT = 0;
 
@@ -53,6 +53,24 @@ $(document).ready(function(){
 	
 	//The context of the canvas
 	var ctx = c.getContext("2d");
+
+	// This is for the pixel art
+	ctx.imageSmoothingEnabled = false;
+	ctx.mozImageSmoothingEnabled = false;
+	ctx.webkitImageSmoothingEnabled = false;
+
+	// Images
+	var imgLeftPaddle = new Image();
+	imgLeftPaddle.src = "/static/images/left_paddle.bmp";
+	var imgRightPaddle = new Image();
+	imgRightPaddle.src = "/static/images/right_paddle.bmp";
+	var imgBall = new Image();
+	imgBall.src = "/static/images/ball.bmp";
+	var imgHeartEmpty = new Image();
+	imgHeartEmpty.src = "/static/images/heartempty.bmp";
+	var imgHeartFull = new Image();
+	imgHeartFull.src = "/static/images/heartfull.bmp";
+
 
 	// Create the socket for us to send data to
 	var socket = io.connect(window.location.origin);
@@ -133,16 +151,20 @@ $(document).ready(function(){
 
 	// This moves the players
 	function movePlayers(){
-		if(p1Up){
+		if (p1Up && (p1YPos > 0))
+		{
 			p1YPos -= PLAYER_SPEED;
 		}
-		if(p1Down){
+		if (p1Down && (p1YPos + P_HEIGHT < HEIGHT))
+		{
 			p1YPos += PLAYER_SPEED;
 		}
-		if(p2Up){
+		if (p2Up && (p2YPos > 0))
+		{
 			p2YPos -= PLAYER_SPEED;
 		}
-		if(p2Down){
+		if (p2Down && (p2YPos + P_HEIGHT < HEIGHT))
+		{
 			p2YPos += PLAYER_SPEED;
 		}
 	}
@@ -228,27 +250,59 @@ $(document).ready(function(){
 		ctx.fillStyle = "#000000";
 		ctx.fillRect(0,0,WIDTH,HEIGHT);
 	}
-	function printPlayer(x,y){
-		ctx.fillStyle = "#FFFFFF";
-		ctx.fillRect(x,y,P_WIDTH,P_HEIGHT);
+	function printLife(){
+
+		// ======= OLD WAY =========
+		// ctx.fillStyle = "#FFFFFF";
+		// ctx.font="30px Arial";
+		// ctx.fillText("P1: " + String(leftScore),40,50);
+		// ctx.fillText("P2: " + String(leftScore),WIDTH - 110,50);
+
+		// IMAGES
+		for(p1LifeIndex = 1; p1LifeIndex <= 3; p1LifeIndex++){
+			if(p1Life >= p1LifeIndex){
+				ctx.drawImage(imgHeartFull, 40 + (p1LifeIndex * 32), 20, 28,28);
+			}else{
+				ctx.drawImage(imgHeartEmpty, 40 + (p1LifeIndex * 32), 20, 28,28);
+			}
+		}
+
+		for(p2LifeIndex = 1; p2LifeIndex <= 3; p2LifeIndex++){
+			if(p2Life >= p2LifeIndex){
+				ctx.drawImage(imgHeartFull, WIDTH - ((p2LifeIndex * 32) + 60), 20, 28,28);
+			}else{
+				ctx.drawImage(imgHeartEmpty, WIDTH - (60 + (p2LifeIndex * 32)), 20, 28,28);
+			}
+		}
 	}
-	function printBall(x,y){
+	function printPlayers(){
+		ctx.fillStyle = "#FFFFFF";
+
+		// PLAYER 1
+		ctx.fillRect(20,p1YPos,P_WIDTH,P_HEIGHT);
+		ctx.drawImage(imgLeftPaddle,20,p1YPos,P_WIDTH,P_HEIGHT);
+
+		// PLAYER 2
+		ctx.fillRect(WIDTH - 20 - P_WIDTH,p2YPos,P_WIDTH,P_HEIGHT);
+		ctx.drawImage(imgRightPaddle,WIDTH - 20 - P_WIDTH,p2YPos,P_WIDTH,P_HEIGHT);
+	}
+	function printBall(){
+		// Classic ball, if the image fails to load
 		ctx.beginPath();
-		ctx.arc(x + B_WIDTH/2, y + B_WIDTH/2, B_WIDTH/2, 0, 2 * Math.PI, false);
+		ctx.arc(ballX + B_WIDTH/2, ballY + B_WIDTH/2, B_WIDTH/2, 0, 2 * Math.PI, false);
 		ctx.fillStyle = '#FFFFFF';
 		ctx.fill();
 		ctx.closePath();
+
+		//The ball image
+		ctx.drawImage(imgBall,ballX,ballY,B_WIDTH,B_WIDTH);
 	}
 	function refreshScreen(){
 		cls();
-		printPlayer(
-			20,
-			p1YPos);
+		printLife();
+		printBall();
+		printPlayers();
 
-		printPlayer(
-			WIDTH - 20 - P_WIDTH,
-			p2YPos);
-		printBall(ballX,ballY);
 	}
 
 

@@ -19,6 +19,14 @@ var server = http.createServer(function(req,res){
 			res.writeHead(200, {'Content-Type': 'text/javascript'});
 			res.end(data, 'utf-8');
 		});
+	}else if(path.indexOf('/static/images/') == 0){
+		fs.readFile('.' + path, function(error, data){
+			res.writeHead(200, {'Content-Type': 'image/bmp'});
+			res.end(data, 'utf-8');
+		});
+	}else{
+		res.writeHead(404,{'Content-Type': 'text/plain'});
+		res.end("Error 404", "utf-8");
 	}
 
 
@@ -38,7 +46,7 @@ var P_HEIGHT = 80;
 
 var FACE_GAP = 40; //the gap between the front face of the paddle and the side of the canvas
 
-var B_WIDTH = 10; // The width and height of the BALL
+var B_WIDTH = 20; // The width and height of the BALL
 
 var players = []; // This will hold an array of objects for each player. Plan to store the score and data here. the index is the ID
 
@@ -58,7 +66,7 @@ var ballYM = 0; //  This is the Y momentum of the ball
 var p1_id = 0; // This is to keep track of what player is currently player1
 var p2_id = 0; // This is to keep track of what player is currently player2
 
-var MAX_LIFE = 2;
+var MAX_LIFE = 3;
 var p1Life = 2;
 var p2Life = 2;
 
@@ -70,7 +78,7 @@ var p2Down = false;
 // The variable that accepts the main loop
 var mainLoopInterval = null;
 var FRAME_RATE = 16;
-var PLAYER_SPEED = 5;
+var PLAYER_SPEED = 4;
 
 
 // When a player connects, It will run this function..
@@ -203,7 +211,7 @@ function updatePlayers(){
 }
 
 function endGame(){
-	io.sockets.emit('end_game',{
+	io.sockets.emit('stop_game',{
 		////
 	});
 	if(mainLoopInterval != null){
@@ -217,26 +225,33 @@ function startGame()
 	io.sockets.emit('start_game',{
 		////
 	});
-	//when scores are implemented, need to be reset to 0 here
-	p1YPos = HEIGHT/2;
-	p2YPos = HEIGHT/2;
+
+	resetBall();
+	resetPlayers();
+	mainLoopInterval = setInterval(mainLoop, FRAME_RATE);
+}
+
+function resetBall(){
 	ballX = 300;
 	ballY = 200;
 	var randomCalc = Math.random();//generating and setting a random value between 0 and 2 for the Y-Axis movement to the left
 	var randomMove = randomCalc * (-2);
 
-	// Moved this here vecause it should only initialize once.
-	console.log(randomMove);
 	ballXM = -4.0;
 	ballYM = randomMove;
+}
 
+function resetPlayers(){
+
+	//when scores are implemented, need to be reset to 0 here
+	p1YPos = HEIGHT/2;
+	p2YPos = HEIGHT/2;
 	p1Up = false;
 	p1Down = false;
 	p2Up = false;
 	p2Down = false;
-	//mainLoop(randomMove); start interval for main loop
-	mainLoopInterval = setInterval(mainLoop, FRAME_RATE);
 }
+
 
 
 // This is the main loop
@@ -341,7 +356,19 @@ function bounceBallOffPaddle(){
 
 // This function checks if the ball hit the side (resulting in a win/loss)
 function checkHorizontalBallCollision(){
-	// DO STUFF
+	// If the ball hits the top of the 'play area' AND if the ball is moving UP
+	if((ballX < 0) && (ballXM < 0)){
+		// Turn around the momentum
+		ballXM = -ballXM;
+		updatePlayers();
+	}
+
+	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
+	if((ballX + B_WIDTH > WIDTH) && (ballXM > 0)){
+		// Turn around the momentum
+		ballXM = -ballXM;
+		updatePlayers();
+	}
 }
 
 // This function should be only used for testing puporses
@@ -354,7 +381,7 @@ function checkHorizontalBallCollisionTEST(){
 	}
 
 	// If the ball hits the bottom of the 'play area' AND if the ball is moving DOWN
-	if((ballX > WIDTH) && (ballXM > 0)){
+	if((ballX + B_WIDTH > WIDTH) && (ballXM > 0)){
 		// Turn around the momentum
 		ballXM = -ballXM;
 		updatePlayers();
