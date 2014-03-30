@@ -11,16 +11,28 @@ var server = http.createServer(function(req,res){
 
 	if(path === '/'){
 		fs.readFile('./index.html', function(error, data){
+			if(error){
+				res.writeHead(404,{'Content-Type': 'text/plain'});
+				res.end("Error reading file/ file not found", "utf-8");
+			}
 			res.writeHead(200, {'Content-Type': 'text/html'});
 			res.end(data, 'utf-8');
 		});
-	}else if(path === '/static/pong.js'){
-		fs.readFile('./static/pong.js', function(error, data){
+	}else if(path.indexOf('/static/js/') == 0){
+		fs.readFile('.' + path, function(error, data){
+			if(error){
+				res.writeHead(404,{'Content-Type': 'text/plain'});
+				res.end("Error reading file/ file not found", "utf-8");
+			}
 			res.writeHead(200, {'Content-Type': 'text/javascript'});
 			res.end(data, 'utf-8');
 		});
 	}else if(path.indexOf('/static/images/') == 0){
 		fs.readFile('.' + path, function(error, data){
+			if(error){
+				res.writeHead(404,{'Content-Type': 'text/plain'});
+				res.end("Error reading file/ file not found", "utf-8");
+			}
 			res.writeHead(200, {'Content-Type': 'image/bmp'});
 			res.end(data, 'utf-8');
 		});
@@ -80,6 +92,7 @@ var p2Down = false;
 
 // The variable that accepts the main loop
 var mainLoopInterval = null;
+var preStartGameInterval = null;
 var FRAME_RATE = 16;
 var PLAYER_SPEED = 4;
 
@@ -90,6 +103,7 @@ io.sockets.on('connection', function(socket){
 	// Add one to the players and the player IDs
 	player_count++;
 	player_id_count++;
+
 
 	// THIS WILL NEED TO BE CHANGED,
 	// The first player to connect is obviously player 1
@@ -127,10 +141,11 @@ io.sockets.on('connection', function(socket){
 
 	socket.on('request_start', function(data){
 		if(player_count >= 2){
-
-			endGame();
-			startGame();
+			resetAll();
+			stopGame();
+			preStartGame(10);
 		}
+		updatePlayers();
 	});
 
 	// When a user disconnects, I would like to see it in the console, we also need to update the total players
@@ -145,21 +160,17 @@ io.sockets.on('connection', function(socket){
 		socket.broadcast.emit('users',{number:player_count});
 
 		// //////////////////////////////////////////////////////////// USE SOME MORE LOGIC HERE, DON"T JUST END IT!!!
-		endGame();
+		stopGame();
+		updatePlayers();
 	});
 
 
 	// This function is for the client to update the UP ARROW key
 	socket.on('up_key', function(data){
-		console.log("up_key data received..");
-
 		if(data.player_id == p1_id){
-			console.log("player1 send the data...");
 			if(data.keyPressed){
-				console.log("p1Up = true;");
 				p1Up = true;
 			}else{
-				console.log("p1Up = false;");
 				p1Up = false;
 			}
 		}else if(data.player_id == p2_id){
@@ -191,8 +202,7 @@ io.sockets.on('connection', function(socket){
 
 
 
-
-
+	updatePlayers();
 });
 
 // This function updates the players
@@ -213,29 +223,34 @@ function updatePlayers(){
 	});
 }
 
-function endGame(){
+function stopGame(){
 	io.sockets.emit('stop_game',{
 		////
 	});
 	if(mainLoopInterval != null){
 		clearInterval(mainLoopInterval);
 	}
+	clearTimeout(preStartGameInterval);
+}
+
+function preStartGame(waitTime){
+	console.log("PRE-START_GAME!");
+	io.sockets.emit('pre_game',{
+		startTime:(new Date().getTime() + (waitTime * 1000))
+	});
+	preStartGameInterval = setTimeout(startGame,(waitTime*1000));
 }
 
 // This function starts up the game.
 function startGame()
 {
 	io.sockets.emit('start_game',{
-		////
 	});
-
-
-	//Set the life
-	p1Life = MAX_LIFE;
-	p2Life = MAX_LIFE;
 
 	resetBall();
 	resetPlayers();
+	clearInterval(mainLoopInterval);
+	updatePlayers();
 	mainLoopInterval = setInterval(mainLoop, FRAME_RATE);
 }
 
@@ -250,14 +265,24 @@ function resetBall(){
 
 function resetPlayers(){
 
-
-	//when scores are implemented, need to be reset to 0 here
 	p1YPos = HEIGHT/2;
 	p2YPos = HEIGHT/2;
 	p1Up = false;
 	p1Down = false;
 	p2Up = false;
 	p2Down = false;
+}
+
+function resetAll(){
+	resetBall();
+	resetPlayers()
+
+
+	//Set the life
+	p1Life = MAX_LIFE;
+	p2Life = MAX_LIFE;
+
+
 }
 
 
@@ -409,11 +434,14 @@ function checkHorizontalBallCollision(){
 	// If the ball is moving left and hits the left...
 	if((ballX < 0) && (ballXM < 0)){
 		// Turn around the momentum
-		resetPlayers();
-		resetBall();
+		stopGame();
 		p1Life--;
 		if(p1Life <= 0){
-			endGame();
+			stopGame();
+			resetAll();
+			preStartGame();
+		}else{
+			preStartGame(3);
 		}
 		updatePlayers();
 	}
@@ -421,11 +449,14 @@ function checkHorizontalBallCollision(){
 	// If the ball is moving right and hits the right
 	if((ballX + B_WIDTH > WIDTH) && (ballXM > 0)){
 		// Turn around the momentum
-		resetPlayers();
-		resetBall();
+		stopGame();
 		p2Life--;
 		if(p2Life <= 0){
-			endGame();
+			stopGame();
+			resetAll();
+			preStartGame(10);
+		}else{
+			preStartGame(3);
 		}
 		updatePlayers();
 	}
@@ -437,6 +468,7 @@ function checkHorizontalBallCollisionTEST(){
 	if((ballX < 0) && (ballXM < 0)){
 		// Turn around the momentum
 		ballXM = -ballXM;
+
 		updatePlayers();
 	}
 

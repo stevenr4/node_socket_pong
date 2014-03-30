@@ -36,6 +36,10 @@ $(document).ready(function(){
 
 	// THe main loop interval
 	var mainLoopInterval = null;
+	var countDownInterval = null;
+	var gameStartTime = 0;
+
+
 	// This will be overwritten by the server.
 	var FRAME_RATE = 100;
 	var PLAYER_SPEED = 0;
@@ -44,8 +48,8 @@ $(document).ready(function(){
 	var i_am_p2 = false;
 
 	var MAX_LIFE = 2;
-	var p1Life = 2;
-	var p2Life = 2;
+	var p1Life = 0;
+	var p2Life = 0;
 
 
 	// Get the canvas that we will be printing to
@@ -59,6 +63,10 @@ $(document).ready(function(){
 	ctx.mozImageSmoothingEnabled = false;
 	ctx.webkitImageSmoothingEnabled = false;
 
+	// These are to check states
+	var stateCountDown = false;
+	var stateWait = true;
+
 	// Images
 	var imgLeftPaddle = new Image();
 	imgLeftPaddle.src = "/static/images/left_paddle.bmp";
@@ -70,6 +78,13 @@ $(document).ready(function(){
 	imgHeartEmpty.src = "/static/images/heartempty.bmp";
 	var imgHeartFull = new Image();
 	imgHeartFull.src = "/static/images/heartfull.bmp";
+
+
+	imgLeftPaddle.onLoad = refreshScreen;
+	imgRightPaddle.onLoad = refreshScreen;
+	imgBall.onLoad = refreshScreen;
+	imgHeartEmpty.onLoad = refreshScreen;
+	imgHeartFull.onLoad = refreshScreen;
 
 
 	// Create the socket for us to send data to
@@ -100,6 +115,7 @@ $(document).ready(function(){
 
 	// The server updates the positions
 	socket.on('positions', function(data){
+		console.log("Got Positions!");
 		p1YPos = data.p1YPos;
 		p2YPos = data.p2YPos;
 		ballX = data.ballX;
@@ -115,26 +131,57 @@ $(document).ready(function(){
 		refreshScreen();
 	});
 
+	// This is for pre-game count down and setup
+	socket.on('pre_game', function(data){
+		stateCountDown = true;
+		stateWait = false;
+		console.log("Starting Count Down!");
+		console.log(data);
+		gameStartTime = data.startTime;
+		if(countDownInterval != null){
+			clearInterval(countDownInterval);
+			countDownInterval = null;
+		}
+		gameStartTime = data.startTime;
+		countDownInterval = setInterval(preGameLoop, FRAME_RATE);
+	});
+
 	// When the server tells us that we are starting the game...
 	socket.on('start_game', function(data){
+		stateCountDown = false;
 		// Start interval for main loop
 		console.log("STARTING");
 		console.log(FRAME_RATE);
+
+
+		clearInterval(countDownInterval);
+		if(mainLoopInterval != null){
+			clearInterval(mainLoopInterval);
+		}
 		mainLoopInterval = setInterval(mainLoop, FRAME_RATE);
 	});
 
 	// When the server tells us that we are stopping the game
 	socket.on('stop_game', function(data){
 		clearInterval(mainLoopInterval);
+		clearInterval(countDownInterval);
 	});
 
 	socket.on('disconnect', function(){
 		console.log("ERRORORORO!");
+		clearInterval(mainLoopInterval);
+		clearInterval(countDownInterval);
 	});
 
 
 
 
+
+	// This function is for the pre-game loop
+	function preGameLoop(){
+		refreshScreen();
+		printCountDown(gameStartTime);
+	}
 
 	// This is the mail looop for the game
 	function mainLoop(){
@@ -303,7 +350,37 @@ $(document).ready(function(){
 		printBall();
 		printPlayers();
 
+		if(stateCountDown){
+			printCountDown(gameStartTime);
+		}else if(stateWait){
+			printWaiting();
+		}
+	}
+
+	function printCountDown(startTime){
+		// This gets the amount of seconds left
+		var secondsLeft = Math.round((startTime - (new Date().getTime()))/1000) + 1;
+		// Print out the seconds
+		ctx.fillStyle = "#FFFFFF";
+		ctx.font="40px Arial";
+		ctx.fillText("Starting Game...",150,100);
+		ctx.fillText(secondsLeft,250,150);
+	}
+
+	function printWaiting(){
+		// Print out the waiting sign
+		ctx.fillStyle = "#FFFFFF";
+		ctx.font="40px Arial";
+		ctx.fillText("Waiting for Players",120,100);
 	}
 
 
 });
+
+
+
+
+
+
+
+
